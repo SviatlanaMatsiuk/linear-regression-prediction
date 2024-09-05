@@ -2,14 +2,17 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 # Function to calculate the cost
 def calc_cost(X, y, w, b, m):
     predictions = np.dot(X, w) + b
     cost = (1 / (2 * m)) * np.sum((y - predictions) ** 2)
     return cost
 
+
 def predict(X, w, b):
     return np.dot(X, w) + b
+
 
 # Load data
 data = pd.read_csv('apartment_prices.csv')
@@ -63,3 +66,19 @@ new_data = np.array([95, 2, 3, 5])  # Example new data
 new_data_standardized = (new_data - X_mean) / X_std
 predicted_price = predict(new_data_standardized, w, b)
 print(f"Predicted price for {new_data}: {predicted_price}")
+
+fig, ax = plt.subplots(1, 4, figsize=(16, 4), sharey=True)
+for i in range(len(ax)):
+    ax[i].scatter(X[:, i] * X_std[i] + X_mean[i], y, label='Target', color='blue')
+
+    X_temp = np.zeros_like(X)
+    X_temp[:] = X[:]
+
+    predictions = predict(X_temp, w, b)
+    ax[i].scatter(X[:, i] * X_std[i] + X_mean[i], predictions, label='Prediction', color='red')
+    ax[i].set_xlabel(features[i])
+
+ax[0].set_ylabel("Price")
+ax[0].legend()
+fig.suptitle("Target versus Prediction using Z-score Normalized Model")
+plt.show()
