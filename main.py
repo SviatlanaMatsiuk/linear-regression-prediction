@@ -1,84 +1,35 @@
-import pandas as pd
-import matplotlib.pyplot as plt
 import numpy as np
 
+from data_processing import load_and_preprocess_data
+from gradient_descent import gradient_descent
+from model import predict
+from visualization import plot_cost_history, plot_predictions
 
-# Function to calculate the cost
-def calc_cost(X, y, w, b, m):
-    predictions = np.dot(X, w) + b
-    cost = (1 / (2 * m)) * np.sum((y - predictions) ** 2)
-    return cost
-
-
-def predict(X, w, b):
-    return np.dot(X, w) + b
-
-
-# Load data
-data = pd.read_csv('apartment_prices.csv')
-
+# Load and preprocess data
 features = ['SquareMeters', 'NoOfFloors', 'NoOfRooms', 'DistanceFromCenter']
-X = data[features].values
-y = data['Price'].values
+X, y, X_mean, X_std = load_and_preprocess_data('apartment_prices.csv', features, 'Price')
 
-# Standardizing features
-X_mean = np.mean(X, axis=0)
-X_std = np.std(X, axis=0)
-X = (X - X_mean) / X_std
-
-m, n = X.shape  # m = number of training examples, n = number of features
-
-w = np.zeros(n)  # Initialize weights
+# Initialize parameters
+m, n = X.shape
+w = np.zeros(n)
 b = 0
 learning_rate = 0.01
 num_iterations = 1000
 
-# List to store cost values
-cost_history = []
-
-# Gradient Descent
-for i in range(num_iterations):
-    predictions = predict(X, w, b)
-    dw = -(1 / m) * np.dot(X.T, (y - predictions))
-    db = -(1 / m) * np.sum(y - predictions)
-    w -= learning_rate * dw
-    b -= learning_rate * db
-
-    # Calculate and store the cost
-    cost = calc_cost(X, y, w, b, m)
-    cost_history.append(cost)
-
-    if i % 100 == 0:
-        print(f"Iteration {i}: Cost {cost}")
+# Run gradient descent
+w, b, cost_history = gradient_descent(X, y, w, b, learning_rate, num_iterations)
 
 # Display final parameters
 print(f"Final parameters: w = {w}, b = {b}")
 
-plt.figure(figsize=(10, 6))
-plt.plot(range(num_iterations), cost_history, color='blue')
-plt.xlabel('Iteration')
-plt.ylabel('Cost')
-plt.title('Cost Function Convergence')
-plt.show()
+# Plot cost history
+plot_cost_history(cost_history, num_iterations)
 
-# Prediction for new value
-new_data = np.array([95, 2, 3, 5])  # Example new data
+# Predict for a new data point
+new_data = [95, 2, 3, 5]
 new_data_standardized = (new_data - X_mean) / X_std
 predicted_price = predict(new_data_standardized, w, b)
 print(f"Predicted price for {new_data}: {predicted_price}")
 
-fig, ax = plt.subplots(1, 4, figsize=(16, 4), sharey=True)
-for i in range(len(ax)):
-    ax[i].scatter(X[:, i] * X_std[i] + X_mean[i], y, label='Target', color='blue')
-
-    X_temp = np.zeros_like(X)
-    X_temp[:] = X[:]
-
-    predictions = predict(X_temp, w, b)
-    ax[i].scatter(X[:, i] * X_std[i] + X_mean[i], predictions, label='Prediction', color='red')
-    ax[i].set_xlabel(features[i])
-
-ax[0].set_ylabel("Price")
-ax[0].legend()
-fig.suptitle("Target versus Prediction using Z-score Normalized Model")
-plt.show()
+# Plot predictions vs targets
+plot_predictions(X, y, w, b, X_mean, X_std, features)
